@@ -8,7 +8,14 @@ from ophyd.sim import Syn2DGauss
 import blueapi.plans as default_plans
 from blueapi.core import BLUESKY_PROTOCOLS, Ability, BlueskyContext, DataEvent, Plan
 from blueapi.messaging import MessageContext, MessagingApp, StompMessagingApp
-from blueapi.worker import RunEngineWorker, RunPlan, TaskEvent, WorkerEvent
+from blueapi.worker import (
+    Pause,
+    Resume,
+    RunEngineWorker,
+    RunPlan,
+    TaskEvent,
+    WorkerEvent,
+)
 
 from .simmotor import SynAxisWithMotionEvents
 
@@ -64,6 +71,16 @@ def on_run_request(message_context: MessageContext, task: RunPlan) -> None:
 
     assert message_context.reply_destination is not None
     app.send(message_context.reply_destination, name)
+
+
+@app.listener(destination="worker.pause")
+def on_pause_request(message_context: MessageContext, pause: Pause) -> None:
+    worker.interrupt(pause)
+
+
+@app.listener(destination="worker.resume")
+def on_resume_request(message_context: MessageContext, resume: Resume) -> None:
+    worker.submit_task(resume)
 
 
 @app.listener("worker.plans")

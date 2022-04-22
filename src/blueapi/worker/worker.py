@@ -1,14 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
+from typing import Generic, Optional, TypeVar
 
 from blueapi.core import DataEvent, EventStream
 
 from .event import TaskEvent, WorkerEvent
 
 T = TypeVar("T")
+R = TypeVar("R")
 
 
-class Worker(ABC, Generic[T]):
+class Worker(ABC, Generic[T, R]):
     """
     Entity that takes and runs tasks. Intended to be a central,
     atomic worker rather than a load distributor
@@ -23,6 +24,10 @@ class Worker(ABC, Generic[T]):
             __name (str): A unique name to identify this task
             __task (T): The task to run
         """
+        ...
+
+    @abstractmethod
+    def interrupt(self, __interrupt_task: R) -> None:
         ...
 
     @abstractmethod

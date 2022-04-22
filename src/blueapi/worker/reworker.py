@@ -16,13 +16,14 @@ from blueapi.core import (
 )
 
 from .event import RawRunEngineState, RunnerState, StatusView, TaskEvent, WorkerEvent
+from .interrupt import Interrupt
 from .task import ActiveTask, Task, TaskState
 from .worker import Worker
 
 LOGGER = logging.getLogger(__name__)
 
 
-class RunEngineWorker(Worker[Task]):
+class RunEngineWorker(Worker[Task, Interrupt]):
     """
     Worker wrapping BlueskyContext that can work in its own thread/process
 
@@ -58,6 +59,16 @@ class RunEngineWorker(Worker[Task]):
         LOGGER.info(f"Submitting: {active_task}")
         self._task_events.publish(TaskEvent(active_task))
         self._task_queue.put(active_task)
+
+    def interrupt(self, interrupt_task: Interrupt) -> None:
+        interrupt_task.do_interrupt(self._ctx)
+
+    @property
+    def current_task_name(self) -> Optional[str]:
+        if self._current is not None:
+            return self._current.name
+        else:
+            return None
 
     def run_forever(self) -> None:
         LOGGER.info("Worker starting")

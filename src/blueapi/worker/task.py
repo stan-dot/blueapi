@@ -86,6 +86,12 @@ def lookup_params(
 
 
 @dataclass
+class Resume(Task):
+    def do_task(self, ctx: BlueskyContext) -> None:
+        ctx.run_engine.resume()
+
+
+@dataclass
 class ActiveTask:
     name: str
     task: Task
