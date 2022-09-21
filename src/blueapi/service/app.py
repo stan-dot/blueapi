@@ -1,15 +1,18 @@
 import logging
 import uuid
 
+from bluesky_queueserver.manager.worker import RunEngineWorker
 from ophyd.sim import Syn2DGauss
 
 import blueapi.plans as default_plans
 from blueapi.core import BlueskyContext, DataEvent
 from blueapi.messaging import MessageContext, MessagingTemplate, StompMessagingTemplate
-from blueapi.worker import RunEngineWorker, RunPlan, TaskEvent, Worker, WorkerEvent
 
 from .model import DeviceModel, PlanModel
 from .simmotor import SynAxisWithMotionEvents
+
+# from blueapi.worker import RunEngineWorker, RunPlan, TaskEvent, Worker, WorkerEvent
+
 
 ctx = BlueskyContext()
 logging.basicConfig(level=logging.INFO)
@@ -34,11 +37,11 @@ ctx.device(det)
 
 
 class Service:
-    _worker: Worker
+    _worker: RunEngineWorker
     _template: MessagingTemplate
 
     def __init__(self) -> None:
-        self._worker = RunEngineWorker(ctx)
+        self._worker = RunEngineWorker()
         self._template = StompMessagingTemplate.autoconfigured("127.0.0.1", 61613)
 
     def run(self) -> None:
@@ -56,6 +59,9 @@ class Service:
 
     def _on_worker_event(self, event: WorkerEvent) -> None:
         self._template.send(self._template.destinations.topic("worker.event"), event)
+
+    def handle_events(self):
+        self._worker.
 
     def _on_task_event(self, event: TaskEvent) -> None:
         self._template.send(
