@@ -7,7 +7,12 @@ from pydantic.fields import Undefined
 from scanspec.regions import Circle
 from scanspec.specs import Line, Spec
 
-from blueapi.utils import TypeValidatorDefinition, create_model_with_type_validators
+from blueapi.utils import (
+    TypeValidatorDefinition,
+    apply_type_validators,
+    create_model_with_type_validators,
+    function_to_model,
+)
 
 
 class DefaultConfig(BaseConfig):
@@ -265,10 +270,9 @@ def test_validates_complex_object_list() -> None:
 
 
 def test_applies_to_base() -> None:
-    model = create_model_with_type_validators(
-        "Foo",
+    model = apply_type_validators(
+        Bar,
         [TypeValidatorDefinition(ComplexObject, lookup_complex)],
-        base=Bar,
     )
     parsed = parse_obj_as(model, {"a": 2, "b": "g"})
     assert parsed.a == 2  # type: ignore
@@ -276,10 +280,9 @@ def test_applies_to_base() -> None:
 
 
 def test_applies_to_nested_base() -> None:
-    model = create_model_with_type_validators(
-        "Foo",
+    model = apply_type_validators(
+        Baz,
         [TypeValidatorDefinition(ComplexObject, lookup_complex)],
-        base=Baz,
     )
     parsed = parse_obj_as(model, {"obj": {"a": 2, "b": "g"}, "c": "hello"})
     assert parsed.obj.a == 2  # type: ignore
@@ -450,10 +453,9 @@ def test_validates_scanspec_wrapper(spec: Spec) -> None:
 
 @pytest.mark.parametrize("spec", SPECS)
 def test_validates_scanspec_wrapping_function(spec: Spec) -> None:
-    model = create_model_with_type_validators(
-        "Foo",
+    model = function_to_model(
+        spec_wrapper,
         [TypeValidatorDefinition(ComplexObject, lookup_complex)],
-        func=spec_wrapper,
     )
     parsed = parse_obj_as(model, {"spec": spec.serialize()})
     assert parsed.spec == spec  # type: ignore
@@ -495,8 +497,9 @@ def test_validates_model_union() -> None:
 
 
 def test_model_from_simple_function_signature() -> None:
-    model = create_model_with_type_validators(
-        "Foo", [TypeValidatorDefinition(int, lookup)], func=foo
+    model = function_to_model(
+        foo,
+        [TypeValidatorDefinition(int, lookup)],
     )
     parsed = parse_obj_as(model, {"a": "g", "b": "hello"})
     assert parsed.a == 6  # type: ignore
@@ -504,10 +507,9 @@ def test_model_from_simple_function_signature() -> None:
 
 
 def test_model_from_complex_function_signature() -> None:
-    model = create_model_with_type_validators(
-        "Foo",
+    model = function_to_model(
+        bar,
         [TypeValidatorDefinition(ComplexObject, lookup_complex)],
-        func=bar,
         config=DefaultConfig,
     )
     parsed = parse_obj_as(model, {"obj": "f"})
@@ -515,10 +517,9 @@ def test_model_from_complex_function_signature() -> None:
 
 
 def test_model_from_nested_function_signature() -> None:
-    model = create_model_with_type_validators(
-        "Foo",
+    model = function_to_model(
+        baz,
         [TypeValidatorDefinition(ComplexObject, lookup_complex)],
-        func=baz,
         config=DefaultConfig,
     )
     parsed = parse_obj_as(model, {"bar": {"a": 4, "b": "k"}})

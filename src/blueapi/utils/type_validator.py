@@ -60,87 +60,10 @@ class TypeValidatorDefinition(Generic[T]):
         return f"converter_{type_name}"
 
 
-@overload
 def create_model_with_type_validators(
     name: str,
     definitions: List[TypeValidatorDefinition],
-    *,
     fields: Fields,
-    config: Optional[Type[BaseConfig]] = None,
-) -> Type[BaseModel]:
-    """
-    Create a model based on the fields supplied
-
-    Args:
-        name: Name of the new model
-        definitions: Definitions of how to validate which types of field
-        fields: Definitions of fields from which to make the model.
-        config: Pydantic config for the model. Defaults to None.
-
-    Returns:
-        Type[BaseModel]: A new pydantic model with the fields and
-            type validators supplied.
-    """
-
-    ...
-
-
-@overload
-def create_model_with_type_validators(
-    name: str,
-    definitions: List[TypeValidatorDefinition],
-    *,
-    func: Callable[..., Any],
-    config: Optional[Type[BaseConfig]] = None,
-) -> Type[BaseModel]:
-    """
-    Create a model from a function's parameters with type
-    validators.
-
-    Args:
-        name: Name of the new model
-        definitions: Definitions of how to validate which types of field
-        func: The model is constructed from the function parameters,
-            which must be type-annotated.
-        config: Pydantic config for the model. Defaults to None.
-
-    Returns:
-        Type[BaseModel]: A new pydantic model based on the
-            function parameters.
-    """
-
-    ...
-
-
-@overload
-def create_model_with_type_validators(
-    name: str,
-    definitions: List[TypeValidatorDefinition],
-    *,
-    base: Type[BaseModel],
-) -> Type[BaseModel]:
-    """
-    Apply type validators to an existing model
-
-    Args:
-        name: Name of the new model
-        definitions: Definitions of how to validate which types of field
-        base: Base class for the model
-
-    Returns:
-        Type[BaseModel]: A new version of `base` with type validators
-    """
-
-    ...
-
-
-def create_model_with_type_validators(
-    name: str,
-    definitions: List[TypeValidatorDefinition],
-    *,
-    fields: Optional[Fields] = None,
-    base: Optional[Type[BaseModel]] = None,
-    func: Optional[Callable[..., Any]] = None,
     config: Optional[Type[BaseConfig]] = None,
 ) -> Type[BaseModel]:
     """
@@ -153,31 +76,14 @@ def create_model_with_type_validators(
         definitions: Definitions of how to validate which types of field
         fields: Definitions of fields from which to make the model.
             Defaults to None.
-        base: Optional base class for the model. Defaults to None.
-        func: Function, if supplied, the model is constructed from the
-            function parameters, which must be type-annotated.
-            Defaults to None.
         config: Pydantic config for the model. Defaults to None.
 
     Returns:
         Type[BaseModel]: A new pydantic model
     """
 
-    # Fields are determined from various sources, directly passed, a base class
-    # and/or a function signature.
-    all_fields = {**(fields or {})}
-    if base is not None:
-        all_fields = {**all_fields, **_extract_fields_from_model(base)}
-    if func is not None:
-        all_fields = {**all_fields, **_extract_fields_from_function(func)}
-    for name, field in all_fields.items():
-        annotation, val = field
-        all_fields[name] = apply_type_validators(annotation, definitions), val
-
-    validators = _type_validators(all_fields, definitions)
-    return create_model(  # type: ignore
-        name, **all_fields, __base__=base, __validators__=validators, __config__=config
-    )
+    base_model = create_model(name, **fields, __config__=config)  # type: ignore
+    return apply_type_validators(base_model, definitions)
 
 
 def apply_type_validators(
@@ -203,11 +109,7 @@ def apply_type_validators(
                 definitions,
             )
         else:
-            return create_model_with_type_validators(
-                model_type.__name__,
-                definitions,
-                base=model_type,
-            )
+            return _apply_type_validators(model_type, definitions)
     elif isclass(model_type) and hasattr(model_type, "__pydantic_model__"):
         model = getattr(model_type, "__pydantic_model__")
         # Recursively apply to inner model
@@ -235,6 +137,22 @@ def apply_type_validators(
     return model_type
 
 
+def _apply_type_validators(
+    model: Type[BaseModel],
+    definitions: List[TypeValidatorDefinition],
+) -> Type[BaseModel]:
+    all_fields = dict(_extract_fields_from_model(model))
+
+    for name, field in all_fields.items():
+        annotation, val = field
+        all_fields[name] = apply_type_validators(annotation, definitions), val
+
+    validators = _type_validators(all_fields, definitions)
+    return create_model(  # type: ignore
+        name, **all_fields, __base__=model, __validators__=validators
+    )
+
+
 def _sanitise_origin(origin: Type) -> Type:
     return {  # type: ignore
         list: List,
@@ -250,6 +168,21 @@ def _extract_fields_from_model(model: Type[BaseModel]) -> Fields:
         name: (field.type_, field.field_info)
         for name, field in model.__fields__.items()
     }
+
+
+def function_to_model(
+    func: Callable[..., Any],
+    definitions: List[TypeValidatorDefinition],
+    name: Optional[str] = None,
+    config: Optional[Type[BaseConfig]] = None,
+) -> Type[BaseModel]:
+    all_fields = _extract_fields_from_function(func)
+    model = create_model(  # type: ignore
+        name or func.__name__,
+        **all_fields,
+        __config__=config,
+    )
+    return apply_type_validators(model, definitions)
 
 
 def _extract_fields_from_function(func: Callable[..., Any]) -> Fields:
