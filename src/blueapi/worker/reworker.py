@@ -99,6 +99,7 @@ class RunEngineWorker(Worker[Task]):
             self._current.is_complete = True
         self._report_status()
         self._errors.clear()
+        self._status_snapshot.clear()
         self._warnings.clear()
 
     @property
@@ -171,9 +172,8 @@ class RunEngineWorker(Worker[Task]):
 
     def _waiting_hook(self, statuses: Optional[Iterable[Status]]) -> None:
         if statuses is not None:
-            with self._status_lock:
-                for status in statuses:
-                    self._monitor_status(status)
+            for status in statuses:
+                self._monitor_status(status)
 
     def _monitor_status(self, status: Status) -> None:
         status_name = str(uuid.uuid4())
@@ -181,13 +181,16 @@ class RunEngineWorker(Worker[Task]):
         if isinstance(status, WatchableStatus) and not status.done:
             LOGGER.info(f"Watching new status: {status_name}")
             self._status_snapshot[status_name] = StatusView()
+            print(f"New status: {status_name}")
             status.watch(partial(self._on_status_event, status, status_name))
 
             # TODO: Maybe introduce an initial event, in which case move
             # all of this code out of the if statement
             def on_complete(status: Status) -> None:
                 self._on_status_event(status, status_name)
-                del self._status_snapshot[status_name]
+                with self._status_lock:
+                    del self._status_snapshot[status_name]
+                print(f"Deleted status: {status_name}")
 
             status.add_callback(on_complete)  # type: ignore
 
@@ -206,24 +209,26 @@ class RunEngineWorker(Worker[Task]):
         time_elapsed: Optional[float] = None,
         time_remaining: Optional[float] = None,
     ) -> None:
-        if not status.done:
-            percentage = float(1.0 - fraction) if fraction is not None else None
-        else:
-            percentage = 1.0
-        view = StatusView(
-            display_name=name or "UNKNOWN",
-            current=current,
-            initial=initial,
-            target=target,
-            unit=unit or "units",
-            precision=precision or 3,
-            done=status.done,
-            percentage=percentage,
-            time_elapsed=time_elapsed,
-            time_remaining=time_remaining,
-        )
-        self._status_snapshot[status_name] = view
-        self._publish_status_snapshot()
+        with self._status_lock:
+            if not status.done:
+                percentage = float(1.0 - fraction) if fraction is not None else None
+            else:
+                percentage = 1.0
+            view = StatusView(
+                display_name=name or "UNKNOWN",
+                current=current,
+                initial=initial,
+                target=target,
+                unit=unit or "units",
+                precision=precision or 3,
+                done=status.done,
+                percentage=percentage,
+                time_elapsed=time_elapsed,
+                time_remaining=time_remaining,
+            )
+            self._status_snapshot[status_name] = view
+            print(f"Updated status: {status_name}")
+            self._publish_status_snapshot()
 
     def _publish_status_snapshot(self) -> None:
         if self._current is None:

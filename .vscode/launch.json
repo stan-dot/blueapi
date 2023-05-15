@@ -28,7 +28,9 @@
             "justMyCode": false,
             "module": "blueapi.cli",
             "args": [
-                "worker"
+                "worker",
+                "-c",
+                "config/bl45p-debug.yaml"
             ]
         },
         {

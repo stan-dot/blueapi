@@ -1,0 +1,6 @@
+env:
+  startupScript: blueapi.startup.bl45p
+stomp:
+  host: p45-activemq.diamond.ac.uk
+logging:
+  level: ERROR
