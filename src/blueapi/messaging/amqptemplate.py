@@ -38,10 +38,8 @@ class AMQPDestinationProvider(DestinationProvider):  # TODO: Return dict?
     ) -> str:  # Must be a series of words separated by dots for.example.this
         return name
 
-    def temporary_queue(
-        self, name: str
-    ) -> str:  # May pass "" to get a uniquely named queue, channel remembers name
-        return name
+    def temporary_queue(self, name: str) -> str:
+        return f"/temp-queue/{name}"
 
     default = queue
 
@@ -155,7 +153,7 @@ class AMQPMessagingTemplate(MessagingTemplate):
 
     def subscribe(self, destination: str, callback: MessageListener) -> None:
         LOGGER.debug(f"New subscription to {destination}")
-        subscription_id = str(uuid.uuid4())
+        subscription_id = destination
         self._subscriptions[subscription_id] = Subscription(destination, callback)
         if (
             self._connection is not None
