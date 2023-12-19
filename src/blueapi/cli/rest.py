@@ -109,8 +109,7 @@ class BlueapiRestClient:
         response = requests.request(method, url, json=data)
         if raise_if(response):
             raise BlueskyRemoteError(str(response))
-        deserialized = parse_obj_as(target_type, response.json())
-        return deserialized
+        return parse_obj_as(target_type, response.json())
 
     def _url(self, suffix: str) -> str:
         base_url = f"{self._config.protocol}://{self._config.host}:{self._config.port}"

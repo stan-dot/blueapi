@@ -11,8 +11,7 @@ class AdditionalUpdateStatus(DeviceStatus):
     """
 
     def add_callback(self, callback):
-        retval = super().add_callback(callback)
-        return retval
+        return super().add_callback(callback)
 
     def watch(self, func):
         """
@@ -40,8 +39,7 @@ class AdditionalUpdateStatus(DeviceStatus):
 
 class AdditionalStatusDevice(Device, Movable):
     def set(self, value: float) -> Status:
-        status = AdditionalUpdateStatus(self)
-        return status
+        return AdditionalUpdateStatus(self)
 
 
 def additional_status_device(name="additional_status_device") -> AdditionalStatusDevice:
