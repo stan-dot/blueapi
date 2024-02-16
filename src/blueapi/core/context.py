@@ -68,12 +68,11 @@ class BlueskyContext:
     _reference_cache: Dict[Type, Type] = field(default_factory=dict)
 
     def wrap(self, plan: MsgGenerator) -> MsgGenerator:
-        wrapped_plan = functools.reduce(
+        yield from functools.reduce(
             lambda wrapped, next_wrapper: next_wrapper(wrapped),
             self.plan_wrappers,
             plan,
         )
-        yield from wrapped_plan
 
     def find_device(self, addr: Union[str, List[str]]) -> Optional[Device]:
         """
@@ -87,11 +86,10 @@ class BlueskyContext:
             Optional[Device]: _description_
         """
 
-        if isinstance(addr, str):
-            list_addr = list(addr.split("."))
-            return self.find_device(list_addr)
-        else:
+        if not isinstance(addr, str):
             return find_component(self.devices, addr)
+        list_addr = list(addr.split("."))
+        return self.find_device(list_addr)
 
     def with_config(self, config: EnvironmentConfig) -> None:
         for source in config.sources:
@@ -213,6 +211,9 @@ class BlueskyContext:
         """
         if target not in self._reference_cache:
 
+
+
+
             class Reference(target):
                 @classmethod
                 def __get_validators__(cls):
@@ -227,10 +228,11 @@ class BlueskyContext:
 
                 @classmethod
                 def __modify_schema__(
-                    cls, field_schema: dict[str, Any], field: Optional[ModelField]
-                ):
+                                cls, field_schema: dict[str, Any], field: Optional[ModelField]
+                            ):
                     if field:
-                        field_schema.update({field.name: repr(target)})
+                        field_schema[field.name] = repr(target)
+
 
             self._reference_cache[target] = Reference
 
@@ -291,8 +293,7 @@ class BlueskyContext:
             isinstance(typ, dev) for dev in BLUESKY_PROTOCOLS
         ):
             return self._reference(typ)
-        args = get_args(typ)
-        if args:
+        if args := get_args(typ):
             new_types = tuple(self._convert_type(i) for i in args)
             root = get_origin(typ)
             return root[new_types] if root else typ

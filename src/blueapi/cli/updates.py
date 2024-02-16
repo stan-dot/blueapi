@@ -62,7 +62,7 @@ class CliEventRenderer:
 
     def on_worker_event(self, event: WorkerEvent) -> None:
         if self._relates_to_task(event):
-            print(str(event.state))
+            print(event.state)
 
     def _relates_to_task(self, event: Union[WorkerEvent, ProgressEvent]) -> bool:
         if self._task_id is None:

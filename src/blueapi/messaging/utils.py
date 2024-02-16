@@ -22,7 +22,4 @@ def determine_deserialization_type(
 
     _, message = inspect.signature(listener).parameters.values()
     a_type = message.annotation
-    if a_type is not inspect.Parameter.empty:
-        return a_type
-    else:
-        return default
+    return a_type if a_type is not inspect.Parameter.empty else default

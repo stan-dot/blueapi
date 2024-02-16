@@ -35,20 +35,18 @@ class VisitServiceClient(VisitServiceClientBase):
     async def create_new_collection(self) -> DataCollectionIdentifier:
         async with ClientSession() as session:
             async with session.post(f"{self._url}/numtracker") as response:
-                if response.status == 200:
-                    json = await response.json()
-                    return DataCollectionIdentifier.parse_obj(json)
-                else:
+                if response.status != 200:
                     raise Exception(response.status)
+                json = await response.json()
+                return DataCollectionIdentifier.parse_obj(json)
 
     async def get_current_collection(self) -> DataCollectionIdentifier:
         async with ClientSession() as session:
             async with session.get(f"{self._url}/numtracker") as response:
-                if response.status == 200:
-                    json = await response.json()
-                    return DataCollectionIdentifier.parse_obj(json)
-                else:
+                if response.status != 200:
                     raise Exception(response.status)
+                json = await response.json()
+                return DataCollectionIdentifier.parse_obj(json)
 
 
 class LocalVisitServiceClient(VisitServiceClientBase):
