@@ -37,7 +37,6 @@ from .rest import BlueapiRestClient
 def main(ctx: click.Context, config: Union[Optional[Path], Tuple[Path, ...]]) -> None:
     # if no command is supplied, run with the options passed
 
-    ctx.help_option_names = ["-h", "--help"]
     config_loader = ConfigLoader(ApplicationConfig)
     if config is not None:
         configs = (config,) if isinstance(config, Path) else config
