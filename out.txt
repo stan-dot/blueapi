@@ -1,0 +1,19 @@
+Update available 0.13.5 → 0.13.6
+Run pip install --upgrade marimo to upgrade.
+
+
+        Create or edit notebooks in your browser 📝
+
+        ➜  URL: http://0.0.0.0:8080?access_token=vJWn0nVHxpbljlz4qU4vkw
+        ➜  Network: http://127.0.1.1:8080?access_token=vJWn0nVHxpbljlz4qU4vkw
+
+[W 250509 15:44:07 middleware:127] Received request with invalid server token (skew protection token). This could mean the server has new code deployed but the client is still using an old version.Expected: obnku8PFeX8SaiyuJn3b_A, got: ZBhyPQU3tAexSM3ciJXfDA
+[W 250509 15:44:11 middleware:127] Received request with invalid server token (skew protection token). This could mean the server has new code deployed but the client is still using an old version.Expected: obnku8PFeX8SaiyuJn3b_A, got: ZBhyPQU3tAexSM3ciJXfDA
+[W 250509 15:44:18 middleware:127] Received request with invalid server token (skew protection token). This could mean the server has new code deployed but the client is still using an old version.Expected: obnku8PFeX8SaiyuJn3b_A, got: ZBhyPQU3tAexSM3ciJXfDA
+[W 250509 15:59:57 middleware:127] Received request with invalid server token (skew protection token). This could mean the server has new code deployed but the client is still using an old version.Expected: obnku8PFeX8SaiyuJn3b_A, got: ZBhyPQU3tAexSM3ciJXfDA
+[W 250509 16:03:13 middleware:127] Received request with invalid server token (skew protection token). This could mean the server has new code deployed but the client is still using an old version.Expected: obnku8PFeX8SaiyuJn3b_A, got: ZBhyPQU3tAexSM3ciJXfDA
+[W 250509 16:13:32 middleware:127] Received request with invalid server token (skew protection token). This could mean the server has new code deployed but the client is still using an old version.Expected: obnku8PFeX8SaiyuJn3b_A, got: ZBhyPQU3tAexSM3ciJXfDA
+        Are you sure you want to quit? (y/n): 
+
+        Thanks for using marimo! 🌊🍃
+

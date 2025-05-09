@@ -65,6 +65,7 @@ CONTEXT_HEADER = "traceparent"
 
 # trying this https://docs.marimo.io/guides/deploying/programmatically/?h=auth#fastapi-example
 mserver = (marimo.create_asgi_app().with_dynamic_directory(path="/dashboard", directory="/notebooks"))
+# NOTE for this to work `m.py` must be copied from this project root into `/notebooks`
 
 
 
