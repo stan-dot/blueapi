@@ -1,4 +1,5 @@
 import logging
+import marimo
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Annotated
@@ -62,6 +63,11 @@ LOGGER = logging.getLogger(__name__)
 CONTEXT_HEADER = "traceparent"
 
 
+# trying this https://docs.marimo.io/guides/deploying/programmatically/?h=auth#fastapi-example
+mserver = (marimo.create_asgi_app().with_dynamic_directory(path="/dashboard", directory="/notebooks"))
+
+
+
 def _runner() -> WorkerDispatcher:
     """Intended to be used only with FastAPI Depends"""
     if RUNNER is None:
@@ -119,6 +125,7 @@ def get_app(config: ApplicationConfig):
     app.middleware("http")(add_api_version_header)
     app.middleware("http")(inject_propagated_observability_context)
     app.middleware("http")(log_request_details)
+    app.mount("", mserver.build())    
     if config.api.cors:
         app.add_middleware(
             CORSMiddleware,
@@ -144,7 +151,7 @@ def verify_access_token(config: OIDCConfig):
             access_token,
             signing_key.key,
             algorithms=config.id_token_signing_alg_values_supported,
-            verify=True,
+            verifv=True,
             audience=config.client_audience,
             issuer=config.issuer,
         )
